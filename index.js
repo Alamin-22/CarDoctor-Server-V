@@ -11,7 +11,12 @@ const port = process.env.PORT || 5000;
 // middleware
 
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://cardoctor-7edc7.web.app",
+        "https://cardoctor-7edc7.firebaseapp.com",
+    ],
     credentials: true,
 }));
 app.use(express.json());
@@ -41,7 +46,7 @@ const logger = async (req, res, next) => {
 
 const verifyToken = async (req, res, next) => {
     const token = req.cookies?.Token;
-    console.log("Value of token in middleware:", token)
+    // console.log("Value of token in middleware:", token)
     if (!token) {
         return res.status(401).send({ message: "Unauthorized" })
     }
@@ -64,7 +69,12 @@ const verifyToken = async (req, res, next) => {
 app.post("/log-out", async (req, res) => {
     const user = req.body;
     console.log("Logout User:", user);
-    res.clearCookie("Token", { maxAge: 0 })
+    res.clearCookie("Token", {
+        maxAge: 0,
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+    })
         .send({ success: true });
 })
 
@@ -91,7 +101,8 @@ async function run() {
             });
             res.cookie("Token", token, {
                 httpOnly: true,
-                secure: false,
+                secure: true,
+                sameSite: "none",
 
             })
                 .send({ success: true });
@@ -127,7 +138,7 @@ async function run() {
         app.get("/bookings", logger, verifyToken, async (req, res) => {
             console.log(req.query.email);
             // console.log("tu tu token", req.cookies.Token);
-            console.log("User in the valid token", req.user)
+            console.log("Valid User Information:", req.user)
 
             if (req.query.email !== req.user.email) {
                 return res.status(403).send({ message: "Forbidden Access" })
